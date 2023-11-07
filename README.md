@@ -32,14 +32,14 @@ Ensure that you have installed:
 
     ```bash
         go run main.go -t <your bot token>
-        ```
+    ```
 
 -   Using Docker
 
      ```bash
         docker build -t statusbot .
         docker run -e <your bot token> -it statusbot
-        ```
+     ```
 
 ## Create a bot
 
@@ -49,7 +49,7 @@ Ensure that you have installed:
   ```ordered
      1. Find telegram bot named "@botfarther"
      2. Type /newbot
-     ```
+  ```
 
 -   Get the bot token
 
@@ -57,4 +57,4 @@ Ensure that you have installed:
     1. In the same bot named "@botfarther"
     2. Type /token
     3. Choose your bot
-    ```
+  ```
