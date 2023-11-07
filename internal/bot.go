@@ -1,3 +1,4 @@
+// internal package starts the bot and manages the internals of it
 package internal
 
 import (
@@ -7,12 +8,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Bot contains the bot api and the communication channels with the bot
 type Bot struct {
 	botAPI     tgbotapi.BotAPI
 	addChan    chan int64
 	removeChan chan int64
 }
 
+// NewBot creates new bot with a valid bot api and communication channels
 func NewBot(token string) (Bot, error) {
 	bot := Bot{}
 
@@ -30,6 +33,7 @@ func NewBot(token string) (Bot, error) {
 	return bot, nil
 }
 
+// Starts initialize the bot and start listening for new updates
 func (bot Bot) Start() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -39,14 +43,24 @@ func (bot Bot) Start() {
 	updates := bot.botAPI.GetUpdatesChan(u)
 	for update := range updates {
 		if update.Message != nil {
+			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "start":
 					bot.addChan <- update.FromChat().ID
-					log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 				case "stop":
 					bot.removeChan <- update.FromChat().ID
-					log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+				default:
+					msg := tgbotapi.NewMessage(update.FromChat().ID, "Invald Command")
+					if _, err := bot.botAPI.Send(msg); err != nil {
+						log.Print(err)
+					}
+				}
+			} else if update.Message.Text != "" {
+				msg := tgbotapi.NewMessage(update.FromChat().ID, "Please send a valid command")
+				if _, err := bot.botAPI.Send(msg); err != nil {
+					log.Print(err)
 				}
 			}
 		}
