@@ -3,6 +3,7 @@ package internal
 
 import (
 	"fmt"
+	"slices"
 	"time"
 	_ "time/tzdata"
 
@@ -86,6 +87,7 @@ func (bot Bot) Start() {
 
 func (bot Bot) runBot() {
 	chatIDs := make(map[int64]bool)
+	weekends := []time.Weekday{time.Friday, time.Saturday}
 
 	ticker := time.NewTicker(bot.getDuration())
 
@@ -98,22 +100,24 @@ func (bot Bot) runBot() {
 			delete(chatIDs, chatID)
 
 		case <-ticker.C:
-			for chatID := range chatIDs {
-				bot.sendReminder(chatID)
+			// skip weekends
+			if !slices.Contains(weekends, bot.time.Weekday()) {
+				for chatID := range chatIDs {
+					bot.sendReminder(chatID)
+				}
 			}
+			bot.time = bot.time.AddDate(0, 0, 1)
 			ticker.Reset(24 * time.Hour)
 		}
 	}
 }
 
 func (bot Bot) getDuration() time.Duration {
-	targetTime := bot.time
-
-	if time.Now().After(targetTime) {
-		targetTime = targetTime.AddDate(0, 0, 1)
+	if time.Now().After(bot.time) {
+		bot.time = bot.time.AddDate(0, 0, 1)
 	}
 
-	return time.Until(targetTime)
+	return time.Until(bot.time)
 }
 
 func (bot Bot) sendReminder(chatID int64) {
