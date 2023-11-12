@@ -38,7 +38,7 @@ go run main.go -b <your bot token> -t <notfication time (default to 17:00)> -z <
 
 ```bash
 docker build -t statusbot .
-docker run -e STATUSBOT_TOKEN=<your bot token> -e NOTFICATION_TIME=<notfication time> -e TIMEZONE=<timezone>-it statusbot
+docker run -e STATUSBOT_TOKEN=<your bot token> -e NOTFICATION_TIME=<notfication time> -e TIMEZONE=<timezone> -it statusbot
 ```
 
 ## Create a bot
