@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/codescalers/statusbot/internal"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -17,13 +18,19 @@ var rootCmd = &cobra.Command{
 
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-		token, err := cmd.Flags().GetString("token")
+		token, err := cmd.Flags().GetString("bot token")
 		if err != nil || token == "" {
 			log.Error().Err(err).Msg("error in token")
 			return
 		}
 
-		bot, err := internal.NewBot(token)
+		time, err := cmd.Flags().GetString("time")
+		if err != nil || time == "" {
+			log.Error().Err(err).Msg("error in time")
+			return
+		}
+
+		bot, err := internal.NewBot(token, time)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to create bot")
 			return
@@ -40,7 +47,7 @@ func Execute() {
 }
 
 func init() {
-
 	cobra.OnInitialize()
-	rootCmd.Flags().StringP("token", "t", "", "Enter a valid telegram bot token")
+	rootCmd.Flags().StringP("bot token", "b", "", "Enter a valid telegram bot token")
+	rootCmd.Flags().StringP("time", "t", "17:00 EET", "Enter a valid time and timezone")
 }

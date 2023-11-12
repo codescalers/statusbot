@@ -13,10 +13,11 @@ type Bot struct {
 	botAPI     tgbotapi.BotAPI
 	addChan    chan int64
 	removeChan chan int64
+	time       time.Time
 }
 
 // NewBot creates new bot with a valid bot api and communication channels
-func NewBot(token string) (Bot, error) {
+func NewBot(token string, t string) (Bot, error) {
 	bot := Bot{}
 
 	botAPI, err := tgbotapi.NewBotAPI(token)
@@ -26,9 +27,15 @@ func NewBot(token string) (Bot, error) {
 
 	log.Printf("Authorized on account %s", botAPI.Self.UserName)
 
+	tm, err := time.Parse(time.RFC822, time.Now().Format("02 Jan 06 ")+t)
+	if err != nil {
+		return bot, err
+	}
+
 	bot.botAPI = *botAPI
 	bot.addChan = make(chan int64)
 	bot.removeChan = make(chan int64)
+	bot.time = tm
 
 	return bot, nil
 }
@@ -70,7 +77,7 @@ func (bot Bot) Start() {
 func (bot Bot) runBot() {
 	chatIDs := make(map[int64]bool)
 
-	ticker := time.NewTicker(durationUntil5())
+	ticker := time.NewTicker(bot.getDuration())
 
 	for {
 		select {
@@ -89,23 +96,14 @@ func (bot Bot) runBot() {
 	}
 }
 
-func durationUntil5() time.Duration {
-	currentTime := time.Now()
-	next5 := time.Date(
-		currentTime.Year(),
-		currentTime.Month(),
-		currentTime.Day(),
-		17,
-		0,
-		0,
-		0,
-		currentTime.Location(),
-	)
-	if currentTime.After(next5) {
-		next5 = next5.AddDate(0, 0, 1)
+func (bot Bot) getDuration() time.Duration {
+	targetTime := bot.time
+
+	if time.Now().After(targetTime) {
+		targetTime = targetTime.AddDate(0, 0, 1)
 	}
 
-	return time.Until(next5)
+	return time.Until(targetTime)
 }
 
 func (bot Bot) sendReminder(chatID int64) {
