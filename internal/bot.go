@@ -3,6 +3,7 @@ package internal
 
 import (
 	"time"
+	_ "time/tzdata"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -17,7 +18,7 @@ type Bot struct {
 }
 
 // NewBot creates new bot with a valid bot api and communication channels
-func NewBot(token string, t string) (Bot, error) {
+func NewBot(token string, t string, timezone string) (Bot, error) {
 	bot := Bot{}
 
 	botAPI, err := tgbotapi.NewBotAPI(token)
@@ -27,15 +28,22 @@ func NewBot(token string, t string) (Bot, error) {
 
 	log.Printf("Authorized on account %s", botAPI.Self.UserName)
 
-	tm, err := time.Parse(time.RFC822, time.Now().Format("02 Jan 06 ")+t)
+	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return bot, err
 	}
 
+	parsedTime, err := time.ParseInLocation("02 Jan 06 15:04", time.Now().Format("02 Jan 06 ")+t, loc)
+	if err != nil {
+		return bot, err
+	}
+
+	log.Printf("Notfications is set to %s", parsedTime)
+
 	bot.botAPI = *botAPI
 	bot.addChan = make(chan int64)
 	bot.removeChan = make(chan int64)
-	bot.time = tm
+	bot.time = parsedTime
 
 	return bot, nil
 }

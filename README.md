@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Status Bot is a tool designed to send a reminder at 5 O'clock  
+The Status Bot is a tool designed to send a reminder at specific time
 
 ## Getting Started
 
@@ -31,14 +31,14 @@ cd statusbot
 - Using go
 
 ```bash
-   go run main.go -t <your bot token>
+go run main.go -b <your bot token> -t <notfication time (default to 17:00)> -z <timezone (default Africa/Cairo)>
 ```
 
 - Using Docker
 
 ```bash
-   docker build -t statusbot .
-   docker run -e <your bot token> -it statusbot
+docker build -t statusbot .
+docker run -e STATUSBOT_TOKEN=<your bot token> -e NOTFICATION_TIME=<notfication time> -e TIMEZONE=<timezone>-it statusbot
 ```
 
 ## Create a bot
@@ -47,14 +47,14 @@ cd statusbot
 - Create a new bot
 
 ```ordered
-   1. Find telegram bot named "@botfarther"
-   2. Type /newbot
+1. Find telegram bot named "@botfarther"
+2. Type /newbot
 ```
 
 - Get the bot token
 
 ```ordered
-   1. In the same bot named "@botfarther"
-   2. Type /token
-   3. Choose your bot
+1. In the same bot named "@botfarther"
+2. Type /token
+3. Choose your bot
 ```

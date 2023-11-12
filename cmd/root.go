@@ -30,7 +30,13 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		bot, err := internal.NewBot(token, time)
+		timezone, err := cmd.Flags().GetString("timezone")
+		if err != nil || timezone == "" {
+			log.Error().Err(err).Msg("error in timezone")
+			return
+		}
+
+		bot, err := internal.NewBot(token, time, timezone)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to create bot")
 			return
@@ -49,5 +55,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize()
 	rootCmd.Flags().StringP("bot token", "b", "", "Enter a valid telegram bot token")
-	rootCmd.Flags().StringP("time", "t", "17:00 EET", "Enter a valid time and timezone")
+	rootCmd.Flags().StringP("time", "t", "17:00", "Enter a valid time")
+	rootCmd.Flags().StringP("timezone", "z", "Africa/Cairo", "Enter a valid timezone")
 }
