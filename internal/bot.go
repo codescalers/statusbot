@@ -3,12 +3,15 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 	"time"
 	_ "time/tzdata"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
 )
+
+const weekends = "Friday Saturday"
 
 // Bot contains the bot api and the communication channels with the bot
 type Bot struct {
@@ -98,22 +101,25 @@ func (bot Bot) runBot() {
 			delete(chatIDs, chatID)
 
 		case <-ticker.C:
-			for chatID := range chatIDs {
-				bot.sendReminder(chatID)
+			// skip weekends
+			if !strings.Contains(weekends, bot.time.Weekday().String()) {
+				for chatID := range chatIDs {
+					bot.sendReminder(chatID)
+				}
+
+				bot.time = bot.time.AddDate(0, 0, 1)
+				ticker.Reset(24 * time.Hour)
 			}
-			ticker.Reset(24 * time.Hour)
 		}
 	}
 }
 
 func (bot Bot) getDuration() time.Duration {
-	targetTime := bot.time
-
-	if time.Now().After(targetTime) {
-		targetTime = targetTime.AddDate(0, 0, 1)
+	if time.Now().After(bot.time) {
+		bot.time = bot.time.AddDate(0, 0, 1)
 	}
 
-	return time.Until(targetTime)
+	return time.Until(bot.time)
 }
 
 func (bot Bot) sendReminder(chatID int64) {
