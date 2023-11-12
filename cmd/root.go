@@ -54,7 +54,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize()
-	rootCmd.Flags().StringP("bot token", "b", "", "Enter a valid telegram bot token")
+	rootCmd.Flags().StringP("bot-token", "b", "", "Enter a valid telegram bot token")
 	rootCmd.Flags().StringP("time", "t", "17:00", "Enter a valid time")
 	rootCmd.Flags().StringP("timezone", "z", "Africa/Cairo", "Enter a valid timezone")
 }

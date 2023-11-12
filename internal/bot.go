@@ -9,6 +9,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	dateOnlyLayout = "02 Jan 06 "
+	dateTimeLayout = "02 Jan 06 15:04"
+)
+
 // Bot contains the bot api and the communication channels with the bot
 type Bot struct {
 	botAPI     tgbotapi.BotAPI
@@ -18,7 +23,7 @@ type Bot struct {
 }
 
 // NewBot creates new bot with a valid bot api and communication channels
-func NewBot(token string, t string, timezone string) (Bot, error) {
+func NewBot(token string, inputTime string, timezone string) (Bot, error) {
 	bot := Bot{}
 
 	botAPI, err := tgbotapi.NewBotAPI(token)
@@ -33,7 +38,8 @@ func NewBot(token string, t string, timezone string) (Bot, error) {
 		return bot, err
 	}
 
-	parsedTime, err := time.ParseInLocation("02 Jan 06 15:04", time.Now().Format("02 Jan 06 ")+t, loc)
+	inputTime = time.Now().Format(dateOnlyLayout) + inputTime
+	parsedTime, err := time.ParseInLocation(dateTimeLayout, inputTime, loc)
 	if err != nil {
 		return bot, err
 	}
