@@ -52,7 +52,7 @@ func (bot Bot) Start() {
 				case "stop":
 					bot.removeChan <- update.FromChat().ID
 				default:
-					msg := tgbotapi.NewMessage(update.FromChat().ID, "Invald Command")
+					msg := tgbotapi.NewMessage(update.FromChat().ID, "Invalid Command")
 					if _, err := bot.botAPI.Send(msg); err != nil {
 						log.Print(err)
 					}
