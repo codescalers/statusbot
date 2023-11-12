@@ -2,16 +2,12 @@
 package internal
 
 import (
+	"fmt"
 	"time"
 	_ "time/tzdata"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	dateOnlyLayout = "02 Jan 06 "
-	dateTimeLayout = "02 Jan 06 15:04"
 )
 
 // Bot contains the bot api and the communication channels with the bot
@@ -38,8 +34,8 @@ func NewBot(token string, inputTime string, timezone string) (Bot, error) {
 		return bot, err
 	}
 
-	inputTime = time.Now().Format(dateOnlyLayout) + inputTime
-	parsedTime, err := time.ParseInLocation(dateTimeLayout, inputTime, loc)
+	inputTime = fmt.Sprintf("%s %s:00", time.Now().Format(time.DateOnly), inputTime)
+	parsedTime, err := time.ParseInLocation(time.DateTime, inputTime, loc)
 	if err != nil {
 		return bot, err
 	}

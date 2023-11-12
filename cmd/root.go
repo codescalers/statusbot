@@ -18,7 +18,7 @@ var rootCmd = &cobra.Command{
 
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-		token, err := cmd.Flags().GetString("bot token")
+		token, err := cmd.Flags().GetString("bot-token")
 		if err != nil || token == "" {
 			log.Error().Err(err).Msg("error in token")
 			return
