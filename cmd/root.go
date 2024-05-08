@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
-	"github.com/codescalers/statusbot/internal"
+	"github.com/codescalers/statusbot/internal/bot"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -20,26 +21,35 @@ var rootCmd = &cobra.Command{
 
 		token, err := cmd.Flags().GetString("bot-token")
 		if err != nil || token == "" {
-			log.Error().Err(err).Msg("error in token")
-			return
+			log.Fatal().Err(err).Msg("error in token")
 		}
 
 		time, err := cmd.Flags().GetString("time")
 		if err != nil || time == "" {
-			log.Error().Err(err).Msg("error in time")
-			return
+			log.Fatal().Err(err).Msg("error in time")
 		}
 
 		timezone, err := cmd.Flags().GetString("timezone")
 		if err != nil || timezone == "" {
-			log.Error().Err(err).Msg("error in timezone")
-			return
+			log.Fatal().Err(err).Msg("error in timezone")
 		}
 
-		bot, err := internal.NewBot(token, time, timezone)
+		db, err := cmd.Flags().GetString("database")
 		if err != nil {
-			log.Error().Err(err).Msg("failed to create bot")
-			return
+			log.Fatal().Err(err).Msg("error in database")
+		}
+
+		if db == "" {
+			defaultPath, err := os.Getwd()
+			if err != nil {
+				log.Fatal().Err(err).Send()
+			}
+			db = filepath.Join(defaultPath, "db")
+		}
+
+		bot, err := internal.NewBot(token, time, timezone, db)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create bot")
 		}
 
 		bot.Start()
@@ -57,4 +67,5 @@ func init() {
 	rootCmd.Flags().StringP("bot-token", "b", "", "Enter a valid telegram bot token")
 	rootCmd.Flags().StringP("time", "t", "17:00", "Enter a valid time")
 	rootCmd.Flags().StringP("timezone", "z", "Africa/Cairo", "Enter a valid timezone")
+	rootCmd.Flags().StringP("database", "d", "", "Enter path to store chats info")
 }
