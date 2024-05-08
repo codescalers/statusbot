@@ -17,6 +17,7 @@ type Bot struct {
 	addChan    chan int64
 	removeChan chan int64
 	time       time.Time
+	location   *time.Location
 }
 
 // NewBot creates new bot with a valid bot api and communication channels
@@ -41,12 +42,13 @@ func NewBot(token string, inputTime string, timezone string) (Bot, error) {
 		return bot, err
 	}
 
-	log.Printf("Notfications is set to %s", parsedTime)
+	log.Printf("notfications is set to %s", parsedTime)
 
+	bot.location = loc
 	bot.botAPI = *botAPI
+	bot.time = parsedTime
 	bot.addChan = make(chan int64)
 	bot.removeChan = make(chan int64)
-	bot.time = parsedTime
 
 	return bot, nil
 }
@@ -89,7 +91,9 @@ func (bot Bot) runBot() {
 	chatIDs := make(map[int64]bool)
 	weekends := []time.Weekday{time.Friday, time.Saturday}
 
-	ticker := time.NewTicker(bot.getDuration())
+	// set ticker every day at 12:00 to update time with location in case of new changes in timezone.
+	updateTicker := time.NewTicker(time.Until(bot.time.Truncate(24 * time.Hour).Add(24 * time.Hour)))
+	reminderTicker := time.NewTicker(bot.getDuration())
 
 	for {
 		select {
@@ -99,7 +103,17 @@ func (bot Bot) runBot() {
 		case chatID := <-bot.removeChan:
 			delete(chatIDs, chatID)
 
-		case <-ticker.C:
+		case <-updateTicker.C:
+			// parse the time with location again to make sure the timezone is always up to date
+			var err error
+			bot.time, err = time.ParseInLocation(time.DateTime, bot.time.String(), bot.location)
+			if err != nil {
+				log.Error().Err(err).Msg("error running the bot")
+				return
+			}
+			updateTicker.Reset(24 * time.Hour)
+
+		case <-reminderTicker.C:
 			// skip weekends
 			if !slices.Contains(weekends, bot.time.Weekday()) {
 				for chatID := range chatIDs {
@@ -107,7 +121,8 @@ func (bot Bot) runBot() {
 				}
 			}
 			bot.time = bot.time.AddDate(0, 0, 1)
-			ticker.Reset(24 * time.Hour)
+			reminderTicker.Reset(24 * time.Hour)
+			log.Printf("next notfications is set to %s", bot.time)
 		}
 	}
 }
