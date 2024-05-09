@@ -40,11 +40,11 @@ var rootCmd = &cobra.Command{
 		}
 
 		if db == "" {
-			defaultPath, err := os.Getwd()
+			defaultPath, err := os.UserHomeDir()
 			if err != nil {
 				log.Fatal().Err(err).Send()
 			}
-			db = filepath.Join(defaultPath, "db")
+			db = filepath.Join(defaultPath, ".statusbot")
 		}
 
 		bot, err := internal.NewBot(token, time, timezone, db)

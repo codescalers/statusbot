@@ -51,20 +51,11 @@ func (db *DB) Save() error {
 		return err
 	}
 
-	err = os.WriteFile(db.path, file, 0777)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(db.path, file, 0777)
 }
 
 func (db *DB) Get(key int64) ChatInfo {
-	val, ok := db.chatsIDs[key]
-	if !ok {
-		return ChatInfo{}
-	}
-	return val
+	return db.chatsIDs[key]
 }
 
 func (db *DB) Update(key int64, value ChatInfo) {
