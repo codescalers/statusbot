@@ -31,14 +31,14 @@ cd statusbot
 - Using go
 
 ```bash
-go run main.go -b <your bot token> -t <notfication time (default to 17:00)> -z <timezone (default Africa/Cairo)>
+go run main.go -b <your bot token> -t <notfication time (default to 17:00)> -z <timezone (default Africa/Cairo)> -d <path to database (default ~/.statusbot)>
 ```
 
 - Using Docker
 
 ```bash
 docker build -t statusbot .
-docker run -e STATUSBOT_TOKEN=<your bot token> -e NOTFICATION_TIME=<notfication time> -e TIMEZONE=<timezone> -it statusbot
+docker run -e STATUSBOT_TOKEN=<your bot token> -e NOTFICATION_TIME=<notfication time> -e TIMEZONE=<timezone> -e DATABASE=<path to database>-it statusbot
 ```
 
 ## Create a bot
