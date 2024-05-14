@@ -15,4 +15,4 @@ WORKDIR /app
 
 COPY --from=builder /src/statusbot .
 
-CMD ./statusbot -b ${STATUSBOT_TOKEN} -t ${NOTFICATION_TIME} -z ${TIMEZONE}
+CMD ./statusbot -b ${STATUSBOT_TOKEN} -t ${NOTFICATION_TIME} -z ${TIMEZONE} -d ${DATABASE}

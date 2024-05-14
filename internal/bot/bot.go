@@ -7,6 +7,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
+	database "github.com/codescalers/statusbot/internal/db"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -18,10 +19,11 @@ type Bot struct {
 	removeChan chan int64
 	time       time.Time
 	location   *time.Location
+	db         database.DB
 }
 
 // NewBot creates new bot with a valid bot api and communication channels
-func NewBot(token string, inputTime string, timezone string) (Bot, error) {
+func NewBot(token, inputTime, timezone, dbPath string) (Bot, error) {
 	bot := Bot{}
 
 	botAPI, err := tgbotapi.NewBotAPI(token)
@@ -44,11 +46,17 @@ func NewBot(token string, inputTime string, timezone string) (Bot, error) {
 
 	log.Printf("notfications is set to %s", parsedTime)
 
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		return bot, err
+	}
+
 	bot.location = loc
 	bot.botAPI = *botAPI
 	bot.time = parsedTime
 	bot.addChan = make(chan int64)
 	bot.removeChan = make(chan int64)
+	bot.db = db
 
 	return bot, nil
 }
@@ -88,7 +96,6 @@ func (bot Bot) Start() {
 }
 
 func (bot Bot) runBot() {
-	chatIDs := make(map[int64]bool)
 	weekends := []time.Weekday{time.Friday, time.Saturday}
 
 	// set ticker every day at 12:00 to update time with location in case of new changes in timezone.
@@ -98,10 +105,10 @@ func (bot Bot) runBot() {
 	for {
 		select {
 		case chatID := <-bot.addChan:
-			chatIDs[chatID] = true
+			bot.db.Update(chatID, database.ChatInfo{ChatID: chatID})
 
 		case chatID := <-bot.removeChan:
-			delete(chatIDs, chatID)
+			bot.db.Delete(chatID)
 
 		case <-updateTicker.C:
 			// parse the time with location again to make sure the timezone is always up to date
@@ -114,15 +121,22 @@ func (bot Bot) runBot() {
 			updateTicker.Reset(24 * time.Hour)
 
 		case <-reminderTicker.C:
+			chats := bot.db.List()
+
 			// skip weekends
 			if !slices.Contains(weekends, bot.time.Weekday()) {
-				for chatID := range chatIDs {
-					bot.sendReminder(chatID)
+				for _, chat := range chats {
+					bot.sendReminder(chat.ChatID)
 				}
 			}
+
 			bot.time = bot.time.AddDate(0, 0, 1)
 			reminderTicker.Reset(24 * time.Hour)
 			log.Printf("next notfications is set to %s", bot.time)
+		}
+
+		if err := bot.db.Save(); err != nil {
+			log.Fatal().Err(err).Msg("failed to save updates to db")
 		}
 	}
 }
