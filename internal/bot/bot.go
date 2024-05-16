@@ -18,6 +18,7 @@ type Bot struct {
 	addChan    chan int64
 	removeChan chan int64
 	time       time.Time
+	inputTime  string
 	location   *time.Location
 	db         database.DB
 }
@@ -38,13 +39,11 @@ func NewBot(token, inputTime, timezone, dbPath string) (Bot, error) {
 		return bot, err
 	}
 
-	inputTime = fmt.Sprintf("%s %s:00", time.Now().Format(time.DateOnly), inputTime)
-	parsedTime, err := time.ParseInLocation(time.DateTime, inputTime, loc)
+	t := fmt.Sprintf("%s %s:00", time.Now().Format(time.DateOnly), inputTime)
+	parsedTime, err := time.ParseInLocation(time.DateTime, t, loc)
 	if err != nil {
 		return bot, err
 	}
-
-	log.Printf("notfications is set to %s", parsedTime)
 
 	db, err := database.NewDB(dbPath)
 	if err != nil {
@@ -54,6 +53,7 @@ func NewBot(token, inputTime, timezone, dbPath string) (Bot, error) {
 	bot.location = loc
 	bot.botAPI = *botAPI
 	bot.time = parsedTime
+	bot.inputTime = inputTime
 	bot.addChan = make(chan int64)
 	bot.removeChan = make(chan int64)
 	bot.db = db
@@ -99,8 +99,10 @@ func (bot Bot) runBot() {
 	weekends := []time.Weekday{time.Friday, time.Saturday}
 
 	// set ticker every day at 12:00 to update time with location in case of new changes in timezone.
-	updateTicker := time.NewTicker(time.Until(bot.time.Truncate(24 * time.Hour).Add(24 * time.Hour)))
+	updateTicker := time.NewTicker(time.Until(time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour)))
 	reminderTicker := time.NewTicker(bot.getDuration())
+
+	log.Printf("notfications is set to %s", bot.time)
 
 	for {
 		select {
@@ -112,13 +114,16 @@ func (bot Bot) runBot() {
 
 		case <-updateTicker.C:
 			// parse the time with location again to make sure the timezone is always up to date
-			var err error
-			bot.time, err = time.ParseInLocation(time.DateTime, bot.time.String(), bot.location)
+			t := fmt.Sprintf("%s %s:00", bot.time.Format(time.DateOnly), bot.inputTime)
+			parsedTime, err := time.ParseInLocation(time.DateTime, t, bot.location)
 			if err != nil {
-				log.Error().Err(err).Msg("error running the bot")
-				return
+				log.Error().Err(err).Send()
+				continue
 			}
+
+			bot.time = parsedTime
 			updateTicker.Reset(24 * time.Hour)
+			log.Printf("next notfications is set to %s", bot.time)
 
 		case <-reminderTicker.C:
 			chats := bot.db.List()
@@ -141,7 +146,7 @@ func (bot Bot) runBot() {
 	}
 }
 
-func (bot Bot) getDuration() time.Duration {
+func (bot *Bot) getDuration() time.Duration {
 	if time.Now().After(bot.time) {
 		bot.time = bot.time.AddDate(0, 0, 1)
 	}
